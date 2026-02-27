@@ -18,31 +18,47 @@ export function Assessment() {
   const [points, setPoints] = useState<Point[]>([]);
   const [hasDrawn, setHasDrawn] = useState(false);
 
-  // Spiral guide drawing function
+  // // Spiral guide drawing function
+  // const drawGuide = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  //   ctx.beginPath();
+  //   const centerX = width / 2;
+  //   const centerY = height / 2;
+  //   // Scale spiral based on canvas size, but cap it so it doesn't get too huge on desktop
+  //   const scale = Math.min(width, height) * 0.008; 
+    
+  //   // Draw spiral
+  //   for (let i = 0; i < 150; i++) {
+  //     const angle = 0.1 * i;
+  //     const x = centerX + (5 + angle * 4) * Math.cos(angle) * scale * 5;
+  //     const y = centerY + (5 + angle * 4) * Math.sin(angle) * scale * 5;
+  //     if (i === 0) {
+  //       ctx.moveTo(x, y);
+  //     } else {
+  //       ctx.lineTo(x, y);
+  //     }
+  //   }
+    
+  //   ctx.strokeStyle = "#cbd5e1"; // slate-300
+  //   ctx.lineWidth = 2;
+  //   ctx.setLineDash([5, 5]);
+  //   ctx.stroke();
+  //   ctx.setLineDash([]);
+  // };
   const drawGuide = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.beginPath();
     const centerX = width / 2;
     const centerY = height / 2;
-    // Scale spiral based on canvas size, but cap it so it doesn't get too huge on desktop
-    const scale = Math.min(width, height) * 0.008; 
-    
-    // Draw spiral
-    for (let i = 0; i < 150; i++) {
-      const angle = 0.1 * i;
-      const x = centerX + (5 + angle * 4) * Math.cos(angle) * scale * 5;
-      const y = centerY + (5 + angle * 4) * Math.sin(angle) * scale * 5;
-      if (i === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    }
-    
-    ctx.strokeStyle = "#cbd5e1"; // slate-300
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
+
+    // Make the circle take up 70% of the canvas height/width
+    const radius = Math.min(width, height) * 0.35;
+
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+
+    ctx.strokeStyle = "#cbd5e1"; // Light slate gray
+    ctx.lineWidth = 3;           // Slightly thicker guide
+    ctx.setLineDash([10, 10]);   // Clean, distinct dashes
     ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.setLineDash([]);         // Reset dash for the actual drawing pen
   };
 
   useEffect(() => {
@@ -133,26 +149,60 @@ export function Assessment() {
     setPoints([]);
     setHasDrawn(false);
   };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (points.length < 50) {
       toast.error("Please trace the entire spiral before submitting.");
       return;
     }
-    
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 2000)),
-      {
-        loading: 'Analyzing motor patterns...',
-        success: 'Assessment complete',
-        error: 'Analysis failed',
-      }
-    );
 
-    setTimeout(() => {
-      navigate("/results", { state: { points } });
-    }, 2000);
+    const loadingToastId = toast.loading('Sending data to AI Model...');
+
+    try {
+      // Send the points to your Python Flask backend!
+      // Notice the payload format matches what Flask expects: { drawing: points }
+      const response = await fetch('http://127.0.0.1:5000/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ drawing: points })
+      });
+
+      if (!response.ok) throw new Error("API failed");
+
+      const apiResult = await response.json();
+
+      toast.success('Analysis complete!', { id: loadingToastId });
+
+      // Navigate to Results page and pass the AI response data
+      setTimeout(() => {
+        navigate("/results", { state: { aiData: apiResult } });
+      }, 1000);
+
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to connect to AI server. Is Flask running?', { id: loadingToastId });
+    }
   };
+  // const handleSubmit = () => {
+  //   if (points.length < 50) {
+  //     toast.error("Please trace the entire spiral before submitting.");
+  //     return;
+  //   }
+    
+  //   toast.promise(
+  //     new Promise((resolve) => setTimeout(resolve, 2000)),
+  //     {
+  //       loading: 'Analyzing motor patterns...',
+  //       success: 'Assessment complete',
+  //       error: 'Analysis failed',
+  //     }
+  //   );
+
+  //   setTimeout(() => {
+  //     navigate("/results", { state: { points } });
+  //   }, 2000);
+  // };
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col gap-6">
@@ -198,7 +248,7 @@ export function Assessment() {
           <div>
             <h3 className="font-bold text-slate-900 mb-2">Instructions</h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Please ask the patient to trace the spiral shown on the canvas. 
+              Please ask the patient to trace the circle shown on the canvas. 
               Encourage them to:
             </p>
             <ul className="list-disc list-inside text-sm text-slate-600 mt-2 space-y-1">

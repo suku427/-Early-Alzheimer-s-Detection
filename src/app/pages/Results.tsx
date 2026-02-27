@@ -5,53 +5,130 @@ import { motion } from "motion/react";
 
 export function Results() {
   const navigate = useNavigate();
-  // const location = useLocation(); // In real app, access state
-  
-  const riskScore = 82; 
-  const riskPercentage = 18;
-  const isHighRisk = riskPercentage > 50;
-  
+  const location = useLocation();
+
+  // 1. Get the data passed from the Flask API via Assessment.tsx
+  const aiData = location.state?.aiData || null;
+
+  // 2. Map the Python output to the UI (Multiply probability by 100 for percentage)
+  const riskPercentage = aiData ? Math.round(aiData.probability * 100) : 18;
+  const isHighRisk = aiData ? aiData.prediction === 1 : false;
+
   const data = [
     { name: 'Risk', value: riskPercentage },
     { name: 'Healthy', value: 100 - riskPercentage },
   ];
-  
+
   const COLORS = isHighRisk ? ['#ef4444', '#e2e8f0'] : ['#22c55e', '#e2e8f0'];
 
+  // 3. Map the live metrics from Flask to the UI cards
+  // 3. Map the live metrics from Flask to the UI cards (CRASH-PROOF VERSION)
   const features = [
     {
       label: "Avg Speed",
-      value: "4.2 cm/s",
-      status: "Normal",
-      color: "text-green-700",
-      bg: "bg-green-100",
-      desc: "Within expected range for age group"
-    },
-    {
-      label: "Pressure Var",
-      value: "0.85",
-      status: "Optimal",
+      value: aiData?.metrics?.["Mean Speed"] ? `${aiData.metrics["Mean Speed"].toFixed(2)} px/s` : "4.2 cm/s",
+      status: isHighRisk ? "Slow" : "Normal",
       color: "text-blue-700",
       bg: "bg-blue-100",
-      desc: "Consistent pen pressure maintained"
-    },
-    {
-      label: "Stroke Jerk",
-      value: "Low",
-      status: "Good",
-      color: "text-green-700",
-      bg: "bg-green-100",
-      desc: "Smooth motion without tremors"
+      desc: "Measures overall motor velocity"
     },
     {
       label: "Pause Ratio",
-      value: "12%",
-      status: "Elevated",
-      color: "text-amber-700",
-      bg: "bg-amber-100",
-      desc: "Slightly higher than baseline"
+      value: aiData?.metrics?.["Pause Ratio"] ? `${aiData.metrics["Pause Ratio"].toFixed(3)}` : "0.12",
+      status: isHighRisk ? "Elevated" : "Optimal",
+      color: isHighRisk ? "text-amber-700" : "text-green-700",
+      bg: isHighRisk ? "bg-amber-100" : "bg-green-100",
+      desc: "Ratio of hesitations during task"
+    },
+    {
+      label: "Stroke Jerk",
+      value: aiData?.metrics?.["Stroke Jerk"] ? `${aiData.metrics["Stroke Jerk"].toFixed(2)}` : "Low",
+      status: "Calculated",
+      color: "text-purple-700",
+      bg: "bg-purple-100",
+      desc: "Measures smoothness of motion"
     }
   ];
+  // const features = [
+  //   {
+  //     label: "Avg Speed",
+  //     value: aiData ? `${aiData.metrics["Mean Speed"].toFixed(2)} px/s` : "4.2 cm/s",
+  //     status: isHighRisk ? "Slow" : "Normal",
+  //     color: "text-blue-700",
+  //     bg: "bg-blue-100",
+  //     desc: "Measures overall motor velocity"
+  //   },
+  //   {
+  //     label: "Pause Ratio",
+  //     value: aiData ? `${aiData.metrics["Pause Ratio"].toFixed(3)}` : "0.12",
+  //     status: isHighRisk ? "Elevated" : "Optimal",
+  //     color: isHighRisk ? "text-amber-700" : "text-green-700",
+  //     bg: isHighRisk ? "bg-amber-100" : "bg-green-100",
+  //     desc: "Ratio of hesitations during task"
+  //   },
+  //   {
+  //     label: "Stroke Jerk",
+  //     value: aiData ? `${aiData.metrics["Stroke Jerk"].toFixed(2)}` : "Low",
+  //     status: "Calculated",
+  //     color: "text-purple-700",
+  //     bg: "bg-purple-100",
+  //     desc: "Measures smoothness of motion"
+  //   }
+  // ];
+// import { useLocation, useNavigate } from "react-router";
+// import { ArrowLeft, Share2, Download, AlertCircle, CheckCircle, Printer, Mail } from "lucide-react";
+// import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+// import { motion } from "motion/react";
+
+// export function Results() {
+//   const navigate = useNavigate();
+//   // const location = useLocation(); // In real app, access state
+  
+//   const riskScore = 82; 
+//   const riskPercentage = 18;
+//   const isHighRisk = riskPercentage > 50;
+  
+//   const data = [
+//     { name: 'Risk', value: riskPercentage },
+//     { name: 'Healthy', value: 100 - riskPercentage },
+//   ];
+  
+//   const COLORS = isHighRisk ? ['#ef4444', '#e2e8f0'] : ['#22c55e', '#e2e8f0'];
+
+//   const features = [
+//     {
+//       label: "Avg Speed",
+//       value: "4.2 cm/s",
+//       status: "Normal",
+//       color: "text-green-700",
+//       bg: "bg-green-100",
+//       desc: "Within expected range for age group"
+//     },
+//     {
+//       label: "Pressure Var",
+//       value: "0.85",
+//       status: "Optimal",
+//       color: "text-blue-700",
+//       bg: "bg-blue-100",
+//       desc: "Consistent pen pressure maintained"
+//     },
+//     {
+//       label: "Stroke Jerk",
+//       value: "Low",
+//       status: "Good",
+//       color: "text-green-700",
+//       bg: "bg-green-100",
+//       desc: "Smooth motion without tremors"
+//     },
+//     {
+//       label: "Pause Ratio",
+//       value: "12%",
+//       status: "Elevated",
+//       color: "text-amber-700",
+//       bg: "bg-amber-100",
+//       desc: "Slightly higher than baseline"
+//     }
+//   ];
 
   return (
     <div className="space-y-6">
