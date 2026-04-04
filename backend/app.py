@@ -1935,16 +1935,6 @@ def predict():
     except Exception as e:
         print(f"CRITICAL API ERROR: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
-# # --- Helper Routes for the Dashboard ---
-# @app.route("/api/patients", methods=["GET"])
-# def get_patients():
-#     """Fetch all patients from MongoDB to show on the dashboard."""
-#     # Find all patients, exclude the MongoDB _id field to avoid JSON serialization errors
-#     patients_cursor = patients_collection.find({}, {"_id": 0}) 
-#     patients = list(patients_cursor)
-#     return jsonify(patients)
-# --- Helper Routes for the Dashboard ---
 @app.route("/api/patients", methods=["GET"])
 def get_patients():
     """Fetch all patients and their LATEST assessment from MongoDB."""
